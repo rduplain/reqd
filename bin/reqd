@@ -81,7 +81,6 @@ usage() {
     echo "Commands:"
     echo "install     - Install stack configured by sbin scripts."
     echo "download    - Download all resources declared by sbin scripts."
-    echo "selfinstall - Install this reqd executable into a new project."
     return 2
 }
 
@@ -794,27 +793,6 @@ download() {
         map_scripts download_package_resources `expand_executable_paths all`
     else
         map_scripts download_package_resources `expand_executable_paths "$@"`
-    fi
-}
-
-selfinstall() {
-    # Install this reqd executable into a new project. Go viral.
-
-    if [ $# -eq 0 ]; then
-        exec >&2 # Redirect all further stdout to stderr.
-        echo "usage: $PROG selfinstall <project_root_filepath>"
-        echo
-        echo "Provide the filepath to the root of the new project. Examples:"
-        echo
-        echo "    $PROG selfinstall ."
-        echo "    $PROG selfinstall ~/projects/foo"
-        return 2
-    else
-        local destination=$1/reqd/bin
-        shift
-
-        mkdir -p $destination
-        cp -v $REQD_BIN/reqd $destination/
     fi
 }
 
