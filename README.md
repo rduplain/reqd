@@ -125,13 +125,6 @@ chmod a+x nixd
 
 Repeat these instructions to update `nixd` to the latest version. It is okay to
 check the `nixd` program into other project repositories, if appropriate.
-Otherwise, a bootstrap script is available to avoid doing this. Check
-`bin/nixd-bootstrap` into a project repository, and download nixd with:
-
-```bash
-sha256=2cfe294fa454d67f31cf71b150aa969b81938e3eb854d45fd2251761a2401be3
-.nixd/bin/nixd-bootstrap .nixd/bin/nixd v1.0 sha256 $sha256
-```
 
 The goal of nixd is to provide a self-sufficient install process, by which a
 developer can check out a project and run a single command to bootstrap the
