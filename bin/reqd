@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# nixd v2.0-dev: nixd builds unix environments.
+# reqd v2.0-dev: reqd builds unix environments.
 #
 # Copyright (c) 2012-2018, Ron DuPlain
 # All rights reserved.
@@ -26,44 +26,44 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # User-configurable environment variables.
-declare NIXD_MIRROR # Set to URL pointing to NIXD_SRC directory on mirror.
+declare REQD_MIRROR # Set to URL pointing to REQD_SRC directory on mirror.
 
 # Environment variables passed to package scripts. Declare now, set later.
-declare NIXD_PREFIX # prefix to use in installation, absolute nixd/usr (static)
-declare NIXD_BIN    # path to nixd/bin/ for utilities (static)
-declare NIXD_SBIN   # path to nixd/sbin/ for package scripts (static)
-declare NIXD_LIB    # path to nixd/lib/, utilities for package scripts (static)
-declare NIXD_ETC    # path to nixd/etc/, conf for package scripts (static)
-declare NIXD_SRC    # path to nixd/src/, dest for package resources (static)
-declare NIXD_OPT    # path to nixd/opt/, in some package installations (static)
-declare NIXD_VAR    # path to nixd/var/, post-install runtime files (static)
-declare NIXD_NAME   # name of package script being called (dynamic)
-declare NIXD_RES    # base path where package resources are downloaded (dynamic)
+declare REQD_PREFIX # prefix to use in installation, absolute reqd/usr (static)
+declare REQD_BIN    # path to reqd/bin/ for utilities (static)
+declare REQD_SBIN   # path to reqd/sbin/ for package scripts (static)
+declare REQD_LIB    # path to reqd/lib/, utilities for package scripts (static)
+declare REQD_ETC    # path to reqd/etc/, conf for package scripts (static)
+declare REQD_SRC    # path to reqd/src/, dest for package resources (static)
+declare REQD_OPT    # path to reqd/opt/, in some package installations (static)
+declare REQD_VAR    # path to reqd/var/, post-install runtime files (static)
+declare REQD_NAME   # name of package script being called (dynamic)
+declare REQD_RES    # base path where package resources are downloaded (dynamic)
 
 # Functions provided to package scripts written in bash.
 #
-# Silence output in case nixd is calling itself.
-declare -f nixd_echo                 > /dev/null
-declare -f nixd_error                > /dev/null
-declare -f nixd_run                  > /dev/null
-declare -f nixd_ls                   > /dev/null
-declare -f nixd_run_only_once        > /dev/null
-declare -f nixd_run_once             > /dev/null
-declare -f nixd_newer_than           > /dev/null
+# Silence output in case reqd is calling itself.
+declare -f reqd_echo                 > /dev/null
+declare -f reqd_error                > /dev/null
+declare -f reqd_run                  > /dev/null
+declare -f reqd_ls                   > /dev/null
+declare -f reqd_run_only_once        > /dev/null
+declare -f reqd_run_once             > /dev/null
+declare -f reqd_newer_than           > /dev/null
 
 # Implementation details exposed in environment, set in main function.
-declare NIXD_DIR
-declare NIXD_VERBOSE
-declare NIXD_INVOCATION
+declare REQD_DIR
+declare REQD_VERBOSE
+declare REQD_INVOCATION
 
 # The name of this executable program, set in main function.
 declare PROG
 
-# Internal stack of shell expressions to call via bash traps when closing nixd.
-declare -a NIXD_TRAPS
+# Internal stack of shell expressions to call via bash traps when closing reqd.
+declare -a REQD_TRAPS
 
 usage() {
-    # Print nixd program usage to stderr and return 2.
+    # Print reqd program usage to stderr and return 2.
 
     exec >&2 # Redirect all further stdout to stderr.
 
@@ -81,7 +81,7 @@ usage() {
     echo "Commands:"
     echo "install     - Install stack configured by sbin scripts."
     echo "download    - Download all resources declared by sbin scripts."
-    echo "selfinstall - Install this nixd executable into a new project."
+    echo "selfinstall - Install this reqd executable into a new project."
     return 2
 }
 
@@ -90,31 +90,31 @@ usage() {
 #
 # Note that these scripts run in a separate bash process.
 
-nixd_echo() {
-    # Echo all arguments on a single line, prefixed by $NIXD_NAME.
+reqd_echo() {
+    # Echo all arguments on a single line, prefixed by $REQD_NAME.
     #
     # Does nothing if not in verbose mode.
 
-    if [ -z "$NIXD_VERBOSE" ]; then
+    if [ -z "$REQD_VERBOSE" ]; then
         return
     fi
 
     # See parameter expansion note in main().
-    local name=${NIXD_NAME:-$PROG}
+    local name=${REQD_NAME:-$PROG}
     echo "$name: $@"
 }
 
-nixd_error() {
-    # Echo all arguments on a single line to stderr, prefixed by $NIXD_NAME.
+reqd_error() {
+    # Echo all arguments on a single line to stderr, prefixed by $REQD_NAME.
     #
     # Be sure to return/exit with an error code if applicable, after calling.
 
     # See parameter expansion note in main().
-    local name=${NIXD_NAME:-$PROG}
+    local name=${REQD_NAME:-$PROG}
     echo "$name: $@" >&2
 }
 
-nixd_run() {
+reqd_run() {
     # A main routine usable by package scripts written in bash.
 
     local command=$1
@@ -126,44 +126,44 @@ nixd_run() {
     set -e
 
     if [ -z "$command_type" ]; then
-        nixd_error "$command is not implemented."
+        reqd_error "$command is not implemented."
         return 127
     elif [ "$command_type" != "function" ]; then
-        nixd_error "$command is not a valid command."
+        reqd_error "$command is not a valid command."
         return 2
     fi
 
     $command "$@"
 }
 
-nixd_ls() {
+reqd_ls() {
     # Return success if file exists, error if not.
     #
     # Programs ls and file are more readable, but they have output by default
-    # and therefore are verbose during typical nixd execution. This custom
+    # and therefore are verbose during typical reqd execution. This custom
     # implementation also provides name-prefixed logging.
 
     for path in "$@"; do
         # Use -e test instead of `ls` to catch bad symlinks.
         if [ -e $path ]; then
-            nixd_echo "$path exists."
+            reqd_echo "$path exists."
             return 0
         else
-            nixd_error "$path does not exist."
+            reqd_error "$path does not exist."
             return 1
         fi
     done
 }
 
-nixd_run_only_once() {
+reqd_run_only_once() {
     # Return success if current package has been run at least once ever.
 
-    if [ -z "$NIXD_NAME" ]; then
-        nixd_error NIXD_NAME is unset in nixd_run_only_once.
+    if [ -z "$REQD_NAME" ]; then
+        reqd_error REQD_NAME is unset in reqd_run_only_once.
         return 3
     fi
 
-    local event=$NIXD_VAR/events/$NIXD_NAME
+    local event=$REQD_VAR/events/$REQD_NAME
     if [ ! -e $event ]; then
         # Current event does not exist.
         return 1
@@ -172,21 +172,21 @@ nixd_run_only_once() {
     return 0
 }
 
-nixd_run_once() {
+reqd_run_once() {
     # Return success if current package has been run since modified.
 
-    if [ -z "$NIXD_NAME" ]; then
-        nixd_error NIXD_NAME is unset in nixd_run_once.
+    if [ -z "$REQD_NAME" ]; then
+        reqd_error REQD_NAME is unset in reqd_run_once.
         return 3
     fi
 
-    local event=$NIXD_VAR/events/$NIXD_NAME
+    local event=$REQD_VAR/events/$REQD_NAME
     if [ ! -e $event ]; then
         # Current event does not exist.
         return 1
     fi
 
-    if [ $event -ot $NIXD_SBIN/$NIXD_NAME ]; then
+    if [ $event -ot $REQD_SBIN/$REQD_NAME ]; then
         # Current event is older than script.
         return 4
     fi
@@ -194,28 +194,28 @@ nixd_run_once() {
     return 0
 }
 
-nixd_newer_than() {
+reqd_newer_than() {
     # Return success if current package's install is newer than arguments.
     #
-    # Current package is designated by $NIXD_NAME.
+    # Current package is designated by $REQD_NAME.
     #
-    # Arguments can be the name of a local nixd package or a filepath. Specify
+    # Arguments can be the name of a local reqd package or a filepath. Specify
     # a package name to refer to the time when that package was installed.
     # Specify a filepath to refer to that file's modified time.
-    # $NIXD_VAR/events has touched event files with the same name as the
+    # $REQD_VAR/events has touched event files with the same name as the
     # package and modified times matching the last successful install of that
     # package.
     #
-    # Note: when a file in the current $NIXD_SRC directory matches the name of
+    # Note: when a file in the current $REQD_SRC directory matches the name of
     # a package, that file's modification time is used instead of the package
     # event.
 
-    if [ -z "$NIXD_NAME" ]; then
-        nixd_error NIXD_NAME is unset in nixd_newer_than.
+    if [ -z "$REQD_NAME" ]; then
+        reqd_error REQD_NAME is unset in reqd_newer_than.
         return 3
     fi
 
-    local event=$NIXD_VAR/events/$NIXD_NAME
+    local event=$REQD_VAR/events/$REQD_NAME
     if [ ! -e $event ]; then
         # Current event does not exist; abort now.
         return 1
@@ -225,11 +225,11 @@ nixd_newer_than() {
         if [ -e $arg ]; then
             # Argument points to an existing file.
             : # pass.
-        elif [ -e $NIXD_VAR/events/$arg ]; then
-            # Argument refers to a nixd event file.
-            arg=$NIXD_VAR/events/$arg
+        elif [ -e $REQD_VAR/events/$arg ]; then
+            # Argument refers to a reqd event file.
+            arg=$REQD_VAR/events/$arg
         else
-            nixd_error "no file or event: $arg"
+            reqd_error "no file or event: $arg"
             return 2
         fi
 
@@ -239,7 +239,7 @@ nixd_newer_than() {
         fi
     done
 
-    if [ $event -ot $NIXD_SBIN/$NIXD_NAME ]; then
+    if [ $event -ot $REQD_SBIN/$REQD_NAME ]; then
         # Current event is older than script.
         return 4
     fi
@@ -282,17 +282,17 @@ install_package() {
     fi
 
     # Make sure the events directory exists.
-    mkdir -p $NIXD_VAR/events
+    mkdir -p $REQD_VAR/events
 
-    nixd_echo "checking..."
+    reqd_echo "checking..."
     if $exe check; then
-        nixd_echo "already installed."
+        reqd_echo "already installed."
     else
         # Essential '&&': execution stops immediately on error with 'set -e'.
         download_package_resources $exe &&
         run_package_pretest $exe &&
         run_package_install $exe &&
-        touch $NIXD_VAR/events/$NIXD_NAME # See nixd_newer_than.
+        touch $REQD_VAR/events/$REQD_NAME # See reqd_newer_than.
     fi
 }
 
@@ -335,29 +335,29 @@ download_package_resources() {
     # Expose errors which occured in calling the resources subcommand.
     # Status code 0 is success and 127 is not implemented.
     if [ $resources_exit -ne 0 ] && [ $resources_exit -ne 127 ]; then
-        nixd_error "resources failed with non-zero status: $resources_exit"
+        reqd_error "resources failed with non-zero status: $resources_exit"
         return $resources_exit
     fi
 
     # Stop now if there are no resources to download.
     if [ -z "$resources" ]; then
-        nixd_echo "no resources to download."
+        reqd_echo "no resources to download."
         return
     fi
 
-    # Log each resource, prefixed by the nixd name.
-    nixd_echo "resources:"
-    map_lines nixd_echo "$resources"
+    # Log each resource, prefixed by the reqd name.
+    reqd_echo "resources:"
+    map_lines reqd_echo "$resources"
 
-    mkdir -p $NIXD_RES
+    mkdir -p $REQD_RES
 
-    pushd $NIXD_RES > /dev/null
+    pushd $REQD_RES > /dev/null
 
     # Download each resource.
     map_lines download_resource "$resources"
     local result=$?
     if [ $result -ne 0 ]; then
-        nixd_error "failed to download."
+        reqd_error "failed to download."
         return $result
     fi
 
@@ -365,9 +365,9 @@ download_package_resources() {
     local -i count=`echo "$resources" | wc -l`
 
     if [ $count -eq 1 ]; then
-        nixd_echo "finished download, 1 resource."
+        reqd_echo "finished download, 1 resource."
     else
-        nixd_echo "finished download, $count resources."
+        reqd_echo "finished download, $count resources."
     fi
 
     popd > /dev/null
@@ -396,11 +396,11 @@ download_resource() {
 
     # Flight check.
     if [ ${#tokens[@]} -eq 0 ]; then
-        nixd_error "$NIXD_NAME: No argument given to `download_resource`."
+        reqd_error "$REQD_NAME: No argument given to `download_resource`."
         return 3
     elif [ ${#tokens[@]} -eq 3 ] || [ ${#tokens[@]} -gt 4 ]; then
-        nixd_error "$NIXD_NAME: resource error - incorrect format: $resource"
-        nixd_error "URL LOCAL_NAME sha1 SHA1_CHECKSUM"
+        reqd_error "$REQD_NAME: resource error - incorrect format: $resource"
+        reqd_error "URL LOCAL_NAME sha1 SHA1_CHECKSUM"
         return 3
     fi
 
@@ -419,20 +419,20 @@ download_resource() {
     fi
 
     # Swap out given URL with mirror if configured.
-    if [ -n "$NIXD_MIRROR" ]; then
-        url="$NIXD_MIRROR/$NIXD_NAME/$local_name"
+    if [ -n "$REQD_MIRROR" ]; then
+        url="$REQD_MIRROR/$REQD_NAME/$local_name"
     fi
 
     if [ -e "$local_name" ]; then
-        nixd_echo "using existing $local_name"
+        reqd_echo "using existing $local_name"
     else
         push_trap reject_file "$local_name"
-        nixd_echo "downloading $local_name from $url"
+        reqd_echo "downloading $local_name from $url"
         curl -L -o "$local_name" $url # Use '-L' to follow redirects.
         if [ -z "${checksum_function}${checksum_value}" ]; then
-            nixd_echo "no checksum given; using without checking: $local_name"
+            reqd_echo "no checksum given; using without checking: $local_name"
         elif ! checksum "$local_name" $checksum_function $checksum_value; then
-            nixd_error "download failed checksum: $local_name"
+            reqd_error "download failed checksum: $local_name"
             return 1
         fi
         pop_trap
@@ -454,20 +454,20 @@ run_package_pretest() {
         return
     fi
 
-    mkdir -p $NIXD_RES
-    pushd $NIXD_RES > /dev/null
+    mkdir -p $REQD_RES
+    pushd $REQD_RES > /dev/null
 
     local result=0
-    nixd_echo "running pretest..."
+    reqd_echo "running pretest..."
     if $exe pretest; then
-        nixd_echo "pretest passed."
+        reqd_echo "pretest passed."
     elif [ $? -eq 127 ]; then
         # Not implemented; still returns 0 in run_package_pretest.
-        # nixd_run already calls nixd_error with log message.
+        # reqd_run already calls reqd_error with log message.
         pass
     else
         result=$?
-        nixd_error "pretest failed with non-zero status: $result"
+        reqd_error "pretest failed with non-zero status: $result"
     fi
 
     popd > /dev/null
@@ -489,16 +489,16 @@ run_package_install() {
         return
     fi
 
-    mkdir -p $NIXD_RES
-    pushd $NIXD_RES > /dev/null
+    mkdir -p $REQD_RES
+    pushd $REQD_RES > /dev/null
 
     local result=0
-    nixd_echo "installing..."
+    reqd_echo "installing..."
     if $exe install; then
-        nixd_echo "installed."
+        reqd_echo "installed."
     else
         result=$?
-        nixd_error "install had non-zero status: $result"
+        reqd_error "install had non-zero status: $result"
     fi
 
     popd > /dev/null
@@ -506,7 +506,7 @@ run_package_install() {
 }
 
 
-# Begin essential utilities for nixd main program.
+# Begin essential utilities for reqd main program.
 
 map_scripts() {
     # Execute <first_argument> for each executable in <second_argument> string.
@@ -514,7 +514,7 @@ map_scripts() {
     # Stop at first failed execution, returning the corresponding exit code.
     #
     # This is useful in mapping the given function to all executables in the
-    # nixd sbin directory. Note that the executable paths must be absolute if
+    # reqd sbin directory. Note that the executable paths must be absolute if
     # current working directory changes during the execution of the mapped
     # function.
     #
@@ -527,10 +527,10 @@ map_scripts() {
 
     local count=0
     for exe in $@; do
-        # Don't set NIXD_NAME before continue statements.
+        # Don't set REQD_NAME before continue statements.
         local name="$( basename "$exe" )"
 
-        # Skip empty glob '*' and reserved keywords: nixd, all.
+        # Skip empty glob '*' and reserved keywords: reqd, all.
         if [ "$name" = "*" ]; then
             continue
         elif [ "$name" = "$PROG" ]; then
@@ -540,12 +540,12 @@ map_scripts() {
         fi
 
         # Set per-package variables.
-        export NIXD_NAME="$name"
-        export NIXD_RES=$NIXD_SRC/$NIXD_NAME
+        export REQD_NAME="$name"
+        export REQD_RES=$REQD_SRC/$REQD_NAME
 
         if [ -x $exe ]; then
             let count=count+1
-            export NIXD_NAME="$( basename "$exe" )"
+            export REQD_NAME="$( basename "$exe" )"
 
             # Test for script exit code explicitly. Reasons:
             #
@@ -558,22 +558,22 @@ map_scripts() {
                 return $?
             fi
         elif [ -e $exe ]; then
-            nixd_error "$exe is not executable; skipping."
+            reqd_error "$exe is not executable; skipping."
         else
-            nixd_error "$exe does not exist."
+            reqd_error "$exe does not exist."
             return 3
         fi
 
-        unset NIXD_NAME NIXD_RES
+        unset REQD_NAME REQD_RES
     done
 
     if [ $count -eq 0 ]; then
-        nixd_error "nothing to run; no scripts found in $NIXD_SBIN."
+        reqd_error "nothing to run; no scripts found in $REQD_SBIN."
         return 3
     elif [ $count -eq 1 ]; then
-        nixd_echo "finished $label with $count package."
+        reqd_echo "finished $label with $count package."
     else
-        nixd_echo "finished $label with $count packages."
+        reqd_echo "finished $label with $count packages."
     fi
 }
 
@@ -610,14 +610,14 @@ map_lines() {
 }
 
 expand_executable_paths() {
-    # Expand executable paths "foo bar" to "$NIXD_SBIN/foo $NIXD_SBIN/bar".
+    # Expand executable paths "foo bar" to "$REQD_SBIN/foo $REQD_SBIN/bar".
 
     for name in $@; do
         if [ "$name" = "all" ]; then
-            # all is an alias for all executables in $NIXD_SBIN.
-            echo "$NIXD_SBIN/*"
+            # all is an alias for all executables in $REQD_SBIN.
+            echo "$REQD_SBIN/*"
         else
-            echo $NIXD_SBIN/$name
+            echo $REQD_SBIN/$name
         fi
     done
 }
@@ -625,13 +625,13 @@ expand_executable_paths() {
 echo_environment() {
     # Print static environment variables to stdout.
 
-    nixd_echo "NIXD_PREFIX: $NIXD_PREFIX"
-    nixd_echo "NIXD_BIN:    $NIXD_BIN"
-    nixd_echo "NIXD_SBIN:   $NIXD_SBIN"
-    nixd_echo "NIXD_LIB:    $NIXD_LIB"
-    nixd_echo "NIXD_ETC:    $NIXD_ETC"
-    nixd_echo "NIXD_SRC:    $NIXD_SRC"
-    nixd_echo "NIXD_MIRROR: $NIXD_MIRROR"
+    reqd_echo "REQD_PREFIX: $REQD_PREFIX"
+    reqd_echo "REQD_BIN:    $REQD_BIN"
+    reqd_echo "REQD_SBIN:   $REQD_SBIN"
+    reqd_echo "REQD_LIB:    $REQD_LIB"
+    reqd_echo "REQD_ETC:    $REQD_ETC"
+    reqd_echo "REQD_SRC:    $REQD_SRC"
+    reqd_echo "REQD_MIRROR: $REQD_MIRROR"
 }
 
 checksum() {
@@ -658,19 +658,19 @@ checksum() {
             echo "$dgst_output"
 
             if [ $dgst_exit -ne 0 ]; then
-                nixd_error "dgst failed with non-zero status: $dgst_exit"
+                reqd_error "dgst failed with non-zero status: $dgst_exit"
                 return $dsgt_exit
             fi
 
             local dgst_value=$( echo "$dgst_output" | cut -f 2 -d '=' )
             dgst_value=${dgst_value// /} # Remove all spaces from hash value.
             if [ -z "dgst_value" ]; then
-                nixd_error "Unable to parse hash value from openssl dgst call."
+                reqd_error "Unable to parse hash value from openssl dgst call."
                 return 1
             fi
 
             if [ "$hash_value" != "$dgst_value" ]; then
-                nixd_error "$filename checksum does not match: $hash_value"
+                reqd_error "$filename checksum does not match: $hash_value"
                 return 1
             fi
             ;;
@@ -685,12 +685,12 @@ check_for_program() {
     # Check requirements. Verify each of the given programs is installed.
     #
     # Check for program dependencies granularly, which is useful when there are
-    # features of nixd which are not essential for simple operations, to check
+    # features of reqd which are not essential for simple operations, to check
     # for dependencies lazily.
 
     for program in $@; do
         if ! which $program > /dev/null; then
-            nixd_error "requires '$program' program, but could not find it."
+            reqd_error "requires '$program' program, but could not find it."
             return 3
         fi
     done
@@ -712,45 +712,45 @@ pass() {
 }
 
 
-# Begin trap functions to run when nixd is finishing execution.
+# Begin trap functions to run when reqd is finishing execution.
 
-nixd_trap_int() {
+reqd_trap_int() {
     # Execute on INT signal.
 
-    nixd_echo Interrupted.
+    reqd_echo Interrupted.
 }
 
-nixd_trap_term() {
+reqd_trap_term() {
     # Execute on TERM signal.
 
-    nixd_echo Terminated.
+    reqd_echo Terminated.
 }
 
 push_trap() {
-    # Push a shell expression onto nixd bash trap stack.
+    # Push a shell expression onto reqd bash trap stack.
 
-    local index=${#NIXD_TRAPS[@]}
-    NIXD_TRAPS[$index]="$@;"
+    local index=${#REQD_TRAPS[@]}
+    REQD_TRAPS[$index]="$@;"
 }
 
 pop_trap() {
-    # Pop most recent shell expression from nixd bash trap stack.
+    # Pop most recent shell expression from reqd bash trap stack.
 
     # bash 4.3+ supports -1 to get last value,
-    # but nixd supports older versions of bash.
-    local index=${#NIXD_TRAPS[@]}
+    # but reqd supports older versions of bash.
+    local index=${#REQD_TRAPS[@]}
     let index=index-1
-    unset NIXD_TRAPS[$index]
+    unset REQD_TRAPS[$index]
 }
 
 reset_traps() {
-    # Reset nixd bash traps, clearing effect of all add_trap calls.
+    # Reset reqd bash traps, clearing effect of all add_trap calls.
 
-    unset NIXD_TRAPS
+    unset REQD_TRAPS
 
-    trap 'eval "${NIXD_TRAPS[@]}"; unset NIXD_TRAPS; nixd_trap_int' INT
-    trap 'eval "${NIXD_TRAPS[@]}"; unset NIXD_TRAPS; nixd_trap_term' TERM
-    trap 'eval "${NIXD_TRAPS[@]}"; unset NIXD_TRAPS' EXIT ERR
+    trap 'eval "${REQD_TRAPS[@]}"; unset REQD_TRAPS; reqd_trap_int' INT
+    trap 'eval "${REQD_TRAPS[@]}"; unset REQD_TRAPS; reqd_trap_term' TERM
+    trap 'eval "${REQD_TRAPS[@]}"; unset REQD_TRAPS' EXIT ERR
 }
 
 # Begin user-exposed subcommands.
@@ -767,16 +767,16 @@ install() {
 
     # Stop now if there's no work to do.
     if map_scripts quick_check $paths > /dev/null 2>&1; then
-        nixd_echo "Everything checks out; no work to do."
+        reqd_echo "Everything checks out; no work to do."
         return
     fi
 
     # Since there is work to do, default to verbose.
-    export NIXD_VERBOSE=${NIXD_VERBOSE:-"true"}
+    export REQD_VERBOSE=${REQD_VERBOSE:-"true"}
 
     # Create additional directories.
-    mkdir -p $NIXD_OPT
-    mkdir -p $NIXD_VAR
+    mkdir -p $REQD_OPT
+    mkdir -p $REQD_VAR
 
     # Install.
     map_scripts install_package $paths
@@ -786,7 +786,7 @@ download() {
     # Find all package scripts and download their resources.
 
     # Default to verbose.
-    export NIXD_VERBOSE=${NIXD_VERBOSE:-"true"}
+    export REQD_VERBOSE=${REQD_VERBOSE:-"true"}
 
     check_for_program curl
 
@@ -798,7 +798,7 @@ download() {
 }
 
 selfinstall() {
-    # Install this nixd executable into a new project. Go viral.
+    # Install this reqd executable into a new project. Go viral.
 
     if [ $# -eq 0 ]; then
         exec >&2 # Redirect all further stdout to stderr.
@@ -810,11 +810,11 @@ selfinstall() {
         echo "    $PROG selfinstall ~/projects/foo"
         return 2
     else
-        local destination=$1/nixd/bin
+        local destination=$1/reqd/bin
         shift
 
         mkdir -p $destination
-        cp -v $NIXD_BIN/nixd $destination/
+        cp -v $REQD_BIN/reqd $destination/
     fi
 }
 
@@ -822,24 +822,24 @@ selfinstall() {
 # Begin main script.
 
 main() {
-    # The main routine of the nixd program itself.
+    # The main routine of the reqd program itself.
 
     # Capture full program invocation for debugging.
-    NIXD_INVOCATION="${BASH_SOURCE[0]} $*"
+    REQD_INVOCATION="${BASH_SOURCE[0]} $*"
 
     # The name of this executable program.
     PROG="$( basename "${BASH_SOURCE[0]}" )"
 
-    # If NIXD_DIR is already set in the environment, use that value.
-    if [ -z "$NIXD_DIR" ]; then
+    # If REQD_DIR is already set in the environment, use that value.
+    if [ -z "$REQD_DIR" ]; then
         local script_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        NIXD_DIR="$( dirname "$script_dir" )"
+        REQD_DIR="$( dirname "$script_dir" )"
     fi
 
     # Set configuration environment variables.
     #
     # Each of the documented user-facing variables are user-configurable, using
-    # the environment variable if set or nixd's default otherwise. Therefore,
+    # the environment variable if set or reqd's default otherwise. Therefore,
     # each of the variables are set with default value parameter expansion
     # below.
     #
@@ -849,18 +849,18 @@ main() {
     #         Use Default Values. If parameter is unset or null, the expansion
     #         of word is substituted. Otherwise, the value of parameter is
     #         substituted.
-    NIXD_PREFIX=${NIXD_PREFIX:-$NIXD_DIR/usr}
-    NIXD_BIN=${NIXD_BIN:-$NIXD_DIR/bin}
-    NIXD_SBIN=${NIXD_SBIN:-$NIXD_DIR/sbin}
-    NIXD_LIB=${NIXD_LIB:-$NIXD_DIR/lib}
-    NIXD_ETC=${NIXD_ETC:-$NIXD_DIR/etc}
-    NIXD_SRC=${NIXD_SRC:-$NIXD_DIR/src}
-    NIXD_OPT=${NIXD_OPT:-$NIXD_DIR/opt}
-    NIXD_VAR=${NIXD_VAR:-$NIXD_DIR/var}
+    REQD_PREFIX=${REQD_PREFIX:-$REQD_DIR/usr}
+    REQD_BIN=${REQD_BIN:-$REQD_DIR/bin}
+    REQD_SBIN=${REQD_SBIN:-$REQD_DIR/sbin}
+    REQD_LIB=${REQD_LIB:-$REQD_DIR/lib}
+    REQD_ETC=${REQD_ETC:-$REQD_DIR/etc}
+    REQD_SRC=${REQD_SRC:-$REQD_DIR/src}
+    REQD_OPT=${REQD_OPT:-$REQD_DIR/opt}
+    REQD_VAR=${REQD_VAR:-$REQD_DIR/var}
 
     # Verbose mode.
-    # When nixd gets a full command-line parser, this could look for '-v'.
-    NIXD_VERBOSE=${NIXD_VERBOSE:-""}
+    # When reqd gets a full command-line parser, this could look for '-v'.
+    REQD_VERBOSE=${REQD_VERBOSE:-""}
 
     # Initialize bash traps.
     reset_traps
@@ -882,17 +882,17 @@ main() {
 
     check_for_program basename dirname wc touch
 
-    # Export nixd environment variables for use in package scripts.
-    export NIXD_PREFIX
-    export NIXD_BIN NIXD_SBIN NIXD_LIB NIXD_ETC NIXD_SRC NIXD_OPT NIXD_VAR
-    export NIXD_DIR NIXD_VERBOSE NIXD_INVOCATION
+    # Export reqd environment variables for use in package scripts.
+    export REQD_PREFIX
+    export REQD_BIN REQD_SBIN REQD_LIB REQD_ETC REQD_SRC REQD_OPT REQD_VAR
+    export REQD_DIR REQD_VERBOSE REQD_INVOCATION
 
     # Export utility functions for use in package scripts written in bash.
-    export -f nixd_echo nixd_error nixd_run
-    export -f nixd_ls nixd_run_only_once nixd_run_once nixd_newer_than
+    export -f reqd_echo reqd_error reqd_run
+    export -f reqd_ls reqd_run_only_once reqd_run_once reqd_newer_than
 
-    # Prefix PATH with NIXD_BIN directory.
-    export PATH=$NIXD_BIN:$PATH
+    # Prefix PATH with REQD_BIN directory.
+    export PATH=$REQD_BIN:$PATH
 
     $command "$@"
 }

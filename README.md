@@ -1,12 +1,12 @@
-# nixd builds unix environments
+# reqd builds unix environments
 
-nixd builds unix environments by providing a download/build workflow which
+reqd builds unix environments by providing a download/build workflow which
 embeds into any build system.
 
 
 ### Project Status
 
-nixd is stable and in regular use by contemporary projects. Source commits are
+reqd is stable and in regular use by contemporary projects. Source commits are
 infrequent because the project is simple and stable, depending only a version
 of GNU bash which is both widely available and was released more than a decade
 ago.
@@ -18,14 +18,14 @@ _Make_ (i.e. GNU make) as a build tool is relevant to any project -- not just
 C/C++ -- when viewed as a _dependency-driven shell environment_. It can run
 commands just like shell. After all, Makefile recipes are line-by-line
 command-line invocations. When these lines get complicated, the Makefile gets
-complicated. The nixd project started specifically to provide a full shell
+complicated. The reqd project started specifically to provide a full shell
 framework to invoke advanced tasks with a single line inside of a Makefile.
 
-Build recipes in nixd are only run if a recipe's *check* fails. Where a
-Makefile relies on files and timestamps, a nixd recipe defines a check
+Build recipes in reqd are only run if a recipe's *check* fails. Where a
+Makefile relies on files and timestamps, a reqd recipe defines a check
 command. This check can rely on files and timestamps, too, but can be
 *anything*. The implementation of the check is its own (often _tiny_) program;
-nixd is checking whether that program runs successfully.
+reqd is checking whether that program runs successfully.
 
 If the check fails, the program gets called again with predefined subcommands
 to download *resources*, configure, and *install* a given requirement, as
@@ -39,10 +39,10 @@ external code into the project repository.
 This does not only apply to Makefiles. All build systems (in Unix) have a
 concept of executing a shell-like command to run a step. Shell is a great tool
 to define step-by-step commands (i.e. a _script_) to configure and install a
-requirement. nixd provides a simple framework to download and install
+requirement. reqd provides a simple framework to download and install
 accordingly, and to only run when needed.
 
-Above all, nixd does this without adding any additional dependencies.
+Above all, reqd does this without adding any additional dependencies.
 
 
 ### Use Cases
@@ -53,7 +53,7 @@ Above all, nixd does this without adding any additional dependencies.
    [Procfile][Introducing Procfile] is relevant [see also:
    [poorman][poorman]]).
 2. Configure Unix systems with a minimal configuration management system.
-   Recipes in nixd can naturally handle system configuration workflows as
+   Recipes in reqd can naturally handle system configuration workflows as
    there's no limitation to which files a shell program can access (using sudo
    as needed).
 3. Provide a simple entry point for a nontrivial step inside of some other
@@ -92,7 +92,7 @@ SHA256=fc53e73ae7586bcdacb4b63875d1ff04f68c5474c1ddeda78f00e5ae2eed1bbb
 check() {
     # Installs to this location, which local to the project.
     # See if the file exists.
-    ls $NIXD_PREFIX/bin/redis-server
+    ls $REQD_PREFIX/bin/redis-server
 }
 
 resources() {
@@ -103,51 +103,51 @@ resources() {
 install() {
     tar -xf $ARCHIVE
     cd $UNPACKED
-    PREFIX=$NIXD_PREFIX make install
+    PREFIX=$REQD_PREFIX make install
 }
 
-nixd_run "$@"
+reqd_run "$@"
 ```
 
 
 ### Usage
 
-Create a hidden .nixd directory within a project, and download `nixd`:
+Create a hidden .reqd directory within a project, and download `reqd`:
 
 ```bash
 cd path/to/project
-mkdir -p .nixd/bin/
-cd .nixd/bin
-curl -o nixd https://raw.githubusercontent.com/rduplain/nixd/master/bin/nixd
-cat nixd # Read and make sure it is okay to execute.
-chmod a+x nixd
+mkdir -p .reqd/bin/
+cd .reqd/bin
+curl -o reqd https://raw.githubusercontent.com/rduplain/reqd/master/bin/reqd
+cat reqd # Read and make sure it is okay to execute.
+chmod a+x reqd
 ```
 
-Repeat these instructions to update `nixd` to the latest version. It is okay to
-check the `nixd` program into other project repositories, if appropriate.
+Repeat these instructions to update `reqd` to the latest version. It is okay to
+check the `reqd` program into other project repositories, if appropriate.
 
-The goal of nixd is to provide a self-sufficient install process, by which a
+The goal of reqd is to provide a self-sufficient install process, by which a
 developer can check out a project and run a single command to bootstrap the
-application environment. Accordingly, the nixd executable is relative to the
+application environment. Accordingly, the reqd executable is relative to the
 project and not a system-wide install.
 
-Next, add scripts to .nixd/sbin/ to install and configure dependencies.
+Next, add scripts to .reqd/sbin/ to install and configure dependencies.
 Recipes are invoked with conventional subcommands:
 
 * *check* - exit with status 0 if already installed, non-zero otherwise.
 * *resources* - print required downloads to stdout, one per line (optional).
 * *pretest* - test for install dependencies, system headers (optional).
-* *install* - unpack those downloads and install them to `$NIXD_PREFIX`.
+* *install* - unpack those downloads and install them to `$REQD_PREFIX`.
 
-Unix conventions apply. Each script in .nixd/sbin must be executable. The
-script is invoked `.nixd/sbin/scriptname subcommand` where subcommand is
+Unix conventions apply. Each script in .reqd/sbin must be executable. The
+script is invoked `.reqd/sbin/scriptname subcommand` where subcommand is
 *check*, *resources*, *pretest*, or *install*. An exit status of 0 indicates
-success, and a non-zero exit status indicates an error (which will stop nixd
+success, and a non-zero exit status indicates an error (which will stop reqd
 execution). Commands *check* and *install* do not have any stdio requirements,
 but *resources* must declare line-by-line its required URLs to stdout.
 
 It's important to declare all direct downloads through the *resources*
-subcommand. This lets nixd manage the downloads and support caching & in-house
+subcommand. This lets reqd manage the downloads and support caching & in-house
 mirroring. The *pretest* and *install* subcommands are run with a working
 directory where the resources are downloaded. To provide meaningful filenames,
 a resource can list a local filename on the same line as the URL, separated by
@@ -161,19 +161,19 @@ In the first case, the remote name of package.tar.gz is used locally. In the
 second case, the remote file is downloaded locally to a file named
 package-1.0.tar.gz.
 
-Note that nixd's convention is to use a filesytem hierarchy based on where the
+Note that reqd's convention is to use a filesytem hierarchy based on where the
 program itself is located on disk. This design supports self-contained
-installations relative to where the nixd program is installed, and is why nixd
-expects a dedicated .nixd/bin directory by convention. The hierarchy is as
+installations relative to where the reqd program is installed, and is why reqd
+expects a dedicated .reqd/bin directory by convention. The hierarchy is as
 follows, with the indicated environment variables pointing to the full absolute
 filepath:
 
-* .nixd/usr/ - prefix to use in installation (NIXD_PREFIX)
-* .nixd/bin/ - directory containing `nixd` program & utilities (NIXD_BIN)
-* .nixd/sbin/ - directory containing `nixd` recipe scripts (NIXD_SBIN)
-* .nixd/etc/ - directory for any configuration files (NIXD_ETC)
-* .nixd/src/ - base directory for downloads (NIXD_SRC)
-* .nixd/src/NAME - download directory for recipe script with NAME (NIXD_RES)
+* .reqd/usr/ - prefix to use in installation (REQD_PREFIX)
+* .reqd/bin/ - directory containing `reqd` program & utilities (REQD_BIN)
+* .reqd/sbin/ - directory containing `reqd` recipe scripts (REQD_SBIN)
+* .reqd/etc/ - directory for any configuration files (REQD_ETC)
+* .reqd/src/ - base directory for downloads (REQD_SRC)
+* .reqd/src/NAME - download directory for recipe script with NAME (REQD_RES)
 
 The etc/ directory can hold any static files as needed. Simply reference
 these files in recipe scripts.
@@ -184,20 +184,20 @@ the OS to inspect for the necessary tools (in *check*) and print out
 installation instructions (in *install*).
 
 If a project has *ordered dependencies*, specify the names of the recipes in
-the correct order as arguments to nixd. In this example, nixd will install
-package1 then package2, then install all packages on the second call to nixd:
+the correct order as arguments to reqd. In this example, reqd will install
+package1 then package2, then install all packages on the second call to reqd:
 
 ```Makefile
-nixd install package1 package2
-nixd install all
+reqd install package1 package2
+reqd install all
 ```
 
 A Makefile pulls this together:
 
 ```Makefile
 install:
-	nixd install package1 package2
-	nixd install all
+	reqd install package1 package2
+	reqd install all
 ```
 
 A make target to start the project then depends on the install target:
@@ -209,37 +209,37 @@ run: install
 
 A clean target would then remove the output directories, which are best
 included by .gitignore, too. To keep resource downloads and builds around,
-retain .nixd/src/.
+retain .reqd/src/.
 
 ```Makefile
 clean:
-	rm -fr .nixd/usr/ .nixd/opt/ .nixd/var/ .nixd/src/
+	rm -fr .reqd/usr/ .reqd/opt/ .reqd/var/ .reqd/src/
 ```
 
-Note that 'nixd' and 'all' are reserved and cannot be used as recipe names.
+Note that 'reqd' and 'all' are reserved and cannot be used as recipe names.
 
 
 ### Mirroring
 
-Once nixd recipes are ready to share across development/staging environments,
-nixd can pull *all* declared resources from an in-house mirror or the local
+Once reqd recipes are ready to share across development/staging environments,
+reqd can pull *all* declared resources from an in-house mirror or the local
 filesystem. This allows for a cache for repeatability and offline usage,
 assuming that no recipe sideloads data beyond what is declared in the
-*resources* step. In one nixd setup:
+*resources* step. In one reqd setup:
 
-    .nixd/bin/nixd download
+    .reqd/bin/reqd download
 
-Then make .nixd/src available as static files on an in-house httpd. From other
-nixd deployments with the same set of package scripts:
+Then make .reqd/src available as static files on an in-house httpd. From other
+reqd deployments with the same set of package scripts:
 
-    NIXD_MIRROR=https://resources.example.org/nixd/src/ .nixd/bin/nixd install
+    REQD_MIRROR=https://resources.example.org/reqd/src/ .reqd/bin/reqd install
 
 The local fileystem is supported instead of an in-house httpd, as well as any
 other URL that curl understands:
 
-    NIXD_MIRROR=file:///var/lib/nixd/src/ .nixd/bin/nixd install
+    REQD_MIRROR=file:///var/lib/reqd/src/ .reqd/bin/reqd install
 
-Note that mirroring is "all or nothing" such that nixd doesn't check upstream
+Note that mirroring is "all or nothing" such that reqd doesn't check upstream
 if a resource is missing in the mirror.
 
 
@@ -248,16 +248,16 @@ if a resource is missing in the mirror.
     0: Success
     1: General error
     2: Incorrect invocation
-    3: Bad configuration of nixd
+    3: Bad configuration of reqd
     127: Command not implemented (for use in optional recipe commands)
 
 
 ### Debugging
 
-nixd has a design principle to fail loudly and immediately. These objectives
-sometimes compete. During development of nixd itself, if a nixd process fails
+reqd has a design principle to fail loudly and immediately. These objectives
+sometimes compete. During development of reqd itself, if a reqd process fails
 at some intermediate step, "fail immediately" could lead to a quiet error. In
-this case, run `bash -x bin/nixd install` (or other subcommand) to see the
+this case, run `bash -x bin/reqd install` (or other subcommand) to see the
 trace in bash to determine where it failed.
 
 ---
