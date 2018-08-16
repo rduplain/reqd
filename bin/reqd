@@ -28,19 +28,19 @@
 # User-configurable environment variables.
 declare REQD_MIRROR # Set to URL pointing to REQD_SRC directory on mirror.
 
-# Environment variables passed to package scripts. Declare now, set later.
+# Environment variables passed to recipes. Declare now, set later.
 declare REQD_PREFIX # prefix to use in installation, absolute reqd/usr (static)
 declare REQD_BIN    # path to reqd/bin/ for utilities (static)
-declare REQD_SBIN   # path to reqd/sbin/ for package scripts (static)
-declare REQD_LIB    # path to reqd/lib/, utilities for package scripts (static)
-declare REQD_ETC    # path to reqd/etc/, conf for package scripts (static)
-declare REQD_SRC    # path to reqd/src/, dest for package resources (static)
-declare REQD_OPT    # path to reqd/opt/, in some package installations (static)
+declare REQD_SBIN   # path to reqd/sbin/ for recipes (static)
+declare REQD_LIB    # path to reqd/lib/, utilities for recipes (static)
+declare REQD_ETC    # path to reqd/etc/, conf for recipes (static)
+declare REQD_SRC    # path to reqd/src/, dest for recipe resources (static)
+declare REQD_OPT    # path to reqd/opt/, in some recipe installations (static)
 declare REQD_VAR    # path to reqd/var/, post-install runtime files (static)
-declare REQD_NAME   # name of package script being called (dynamic)
-declare REQD_RES    # base path where package resources are downloaded (dynamic)
+declare REQD_NAME   # name of recipe being called (dynamic)
+declare REQD_RES    # base path where recipe resources are downloaded (dynamic)
 
-# Functions provided to package scripts written in bash.
+# Functions provided to recipes written in bash.
 #
 # Silence output in case reqd is calling itself.
 declare -f reqd_echo                 > /dev/null
@@ -79,15 +79,15 @@ usage() {
     echo_environment
     echo
     echo "Commands:"
-    echo "install     - Install stack configured by sbin scripts."
-    echo "download    - Download all resources declared by sbin scripts."
+    echo "install     - Install recipes found in sbin."
+    echo "download    - Download all resources declared by sbin recipes."
     return 2
 }
 
 
-# Begin functions exported to package scripts written in bash.
+# Begin functions exported to recipes written in bash.
 #
-# Note that these scripts run in a separate bash process.
+# Note that these recipes run in a separate bash process.
 
 reqd_echo() {
     # Echo all arguments on a single line, prefixed by $REQD_NAME.
@@ -114,7 +114,7 @@ reqd_error() {
 }
 
 reqd_main() {
-    # A main routine usable by package scripts written in bash.
+    # A main routine usable by recipes written in bash.
 
     local command=$1
     shift
@@ -155,7 +155,7 @@ reqd_ls() {
 }
 
 reqd_run_only_once() {
-    # Return success if current package has been run at least once ever.
+    # Return success if current recipe has been run at least once ever.
 
     if [ -z "$REQD_NAME" ]; then
         reqd_error REQD_NAME is unset in reqd_run_only_once.
@@ -172,7 +172,7 @@ reqd_run_only_once() {
 }
 
 reqd_run_once() {
-    # Return success if current package has been run since modified.
+    # Return success if current recipe has been run since modified.
 
     if [ -z "$REQD_NAME" ]; then
         reqd_error REQD_NAME is unset in reqd_run_once.
@@ -186,7 +186,7 @@ reqd_run_once() {
     fi
 
     if [ $event -ot $REQD_SBIN/$REQD_NAME ]; then
-        # Current event is older than script.
+        # Current event is older than recipe.
         return 4
     fi
 
@@ -194,19 +194,18 @@ reqd_run_once() {
 }
 
 reqd_newer_than() {
-    # Return success if current package's install is newer than arguments.
+    # Return success if current recipe's install is newer than arguments.
     #
-    # Current package is designated by $REQD_NAME.
+    # Current recipe is designated by $REQD_NAME.
     #
-    # Arguments can be the name of a local reqd package or a filepath. Specify
-    # a package name to refer to the time when that package was installed.
-    # Specify a filepath to refer to that file's modified time.
-    # $REQD_VAR/events has touched event files with the same name as the
-    # package and modified times matching the last successful install of that
-    # package.
+    # Arguments can be the name of a local reqd recipe or a filepath. Specify a
+    # recipe name to refer to the time when that recipe was installed. Specify
+    # a filepath to refer to that file's modified time. $REQD_VAR/events has
+    # touched event files with the same name as the recipe and modified times
+    # matching the last successful install of that recipe.
     #
     # Note: when a file in the current $REQD_SRC directory matches the name of
-    # a package, that file's modification time is used instead of the package
+    # a recipe, that file's modification time is used instead of the recipe
     # event.
 
     if [ -z "$REQD_NAME" ]; then
@@ -239,16 +238,16 @@ reqd_newer_than() {
     done
 
     if [ $event -ot $REQD_SBIN/$REQD_NAME ]; then
-        # Current event is older than script.
+        # Current event is older than recipe.
         return 4
     fi
 }
 
 
-# Begin per-package functions.
+# Begin per-recipe functions.
 #
-# Each function here follows the same convention: take the path to the package
-# script executable as an argument, and if no argument is given, print a short
+# Each function here follows the same convention: take the path to the recipe
+# executable as an argument, and if no argument is given, print a short
 # (typically one word) user-friendly label of the function's purpose -- to
 # support introspection.
 
@@ -266,7 +265,7 @@ quick_check() {
     $exe check > /dev/null 2>&1
 }
 
-install_package() {
+install_recipe() {
     # Downloads resources specified by `exe resources` then runs `exe install`.
     #
     # The install subcommand runs in directory where resources are downloaded.
@@ -288,15 +287,15 @@ install_package() {
         reqd_echo "already installed."
     else
         # Essential '&&': execution stops immediately on error with 'set -e'.
-        download_package_resources $exe &&
-        run_package_pretest $exe &&
-        run_package_install $exe &&
+        download_recipe_resources $exe &&
+        run_recipe_pretest $exe &&
+        run_recipe_install $exe &&
         touch $REQD_VAR/events/$REQD_NAME # See reqd_newer_than.
     fi
 }
 
-download_package_resources() {
-    # Download resources specified by the package script's 'resource' command.
+download_recipe_resources() {
+    # Download resources specified by the recipe's 'resource' command.
     #
     # Resources are specified by `exe resources`, providing via stdout newline
     # (\n) delimited URLs with an optional local name, in the format of one of:
@@ -307,13 +306,13 @@ download_package_resources() {
     #
     # For example:
     #
-    #     http://example.com/package.tar.gz
-    #     http://example.com/1.0/package.tar.gz package-1.0.tar.gz
-    #     http://example.com/1.0/package.tar.gz package-1.0.tar.gz sha1 c0ffee
+    #     http://example.com/recipe.tar.gz
+    #     http://example.com/1.0/recipe.tar.gz recipe-1.0.tar.gz
+    #     http://example.com/1.0/recipe.tar.gz recipe-1.0.tar.gz sha1 c0ffee
     #
-    # In the first case, the remote name of package.tar.gz is used locally. In
+    # In the first case, the remote name of recipe.tar.gz is used locally. In
     # the second case, the remote file is downloaded locally to a file named
-    # package-1.0.tar.gz. In the third case, the local file is also checked to
+    # recipe-1.0.tar.gz. In the third case, the local file is also checked to
     # match the given SHA1 checksum; if it does not match, the download fails
     # and the file is deleted.
 
@@ -438,12 +437,12 @@ download_resource() {
     fi
 }
 
-run_package_pretest() {
-    # Run `exe pretest` in the package's resource directory.
+run_recipe_pretest() {
+    # Run `exe pretest` in the recipe's resource directory.
     #
-    # This resource directory will have anything downloaded for the package,
-    # and is still created if no resources are needed, to allow the package
-    # script to create any scratch or temporary files.
+    # This resource directory will have anything downloaded for the recipe, and
+    # is still created if no resources are needed, to allow the recipe to
+    # create any scratch or temporary files.
 
     local exe=$1
     shift
@@ -461,7 +460,7 @@ run_package_pretest() {
     if $exe pretest; then
         reqd_echo "pretest passed."
     elif [ $? -eq 127 ]; then
-        # Not implemented; still returns 0 in run_package_pretest.
+        # Not implemented; still returns 0 in run_recipe_pretest.
         # reqd_main already calls reqd_error with log message.
         pass
     else
@@ -473,12 +472,12 @@ run_package_pretest() {
     return $result
 }
 
-run_package_install() {
-    # Run `exe install` in the package's resource directory.
+run_recipe_install() {
+    # Run `exe install` in the recipe's resource directory.
     #
-    # This resource directory will have anything downloaded for the package,
-    # and is still created if no resources are needed, to allow the package
-    # script to create any scratch or temporary files.
+    # This resource directory will have anything downloaded for the recipe, and
+    # is still created if no resources are needed, to allow the recipe to
+    # create any scratch or temporary files.
 
     local exe=$1
     shift
@@ -507,7 +506,7 @@ run_package_install() {
 
 # Begin essential utilities for reqd main program.
 
-map_scripts() {
+map_recipes() {
     # Execute <first_argument> for each executable in <second_argument> string.
     #
     # Stop at first failed execution, returning the corresponding exit code.
@@ -538,7 +537,7 @@ map_scripts() {
             continue
         fi
 
-        # Set per-package variables.
+        # Set per-recipe variables.
         export REQD_NAME="$name"
         export REQD_RES=$REQD_SRC/$REQD_NAME
 
@@ -546,10 +545,10 @@ map_scripts() {
             let count=count+1
             export REQD_NAME="$( basename "$exe" )"
 
-            # Test for script exit code explicitly. Reasons:
+            # Test for recipe exit code explicitly. Reasons:
             #
             # 1. 'set -e' has curious behavior for deeply nested commands.
-            # 2. Enable override of 'set -e' to continue on script failure.
+            # 2. Enable override of 'set -e' to continue on recipe failure.
             if $command $exe; then
                 pass
             else
@@ -567,12 +566,12 @@ map_scripts() {
     done
 
     if [ $count -eq 0 ]; then
-        reqd_error "nothing to run; no scripts found in $REQD_SBIN."
+        reqd_error "nothing to run; no recipes found in $REQD_SBIN."
         return 3
     elif [ $count -eq 1 ]; then
-        reqd_echo "finished $label with $count package."
+        reqd_echo "finished $label with $count recipe."
     else
-        reqd_echo "finished $label with $count packages."
+        reqd_echo "finished $label with $count recipes."
     fi
 }
 
@@ -755,7 +754,7 @@ reset_traps() {
 # Begin user-exposed subcommands.
 
 install() {
-    # Find all package scripts, download their resources, then install them.
+    # Find all recipes, download their resources, then install them.
 
     local paths=""
     if [ $# -eq 0 ]; then
@@ -765,7 +764,7 @@ install() {
     fi
 
     # Stop now if there's no work to do.
-    if map_scripts quick_check $paths > /dev/null 2>&1; then
+    if map_recipes quick_check $paths > /dev/null 2>&1; then
         reqd_echo "Everything checks out; no work to do."
         return
     fi
@@ -778,11 +777,11 @@ install() {
     mkdir -p $REQD_VAR
 
     # Install.
-    map_scripts install_package $paths
+    map_recipes install_recipe $paths
 }
 
 download() {
-    # Find all package scripts and download their resources.
+    # Find all recipes and download their resources.
 
     # Default to verbose.
     export REQD_VERBOSE=${REQD_VERBOSE:-"true"}
@@ -790,14 +789,14 @@ download() {
     check_for_program curl
 
     if [ $# -eq 0 ]; then
-        map_scripts download_package_resources `expand_executable_paths all`
+        map_recipes download_recipe_resources `expand_executable_paths all`
     else
-        map_scripts download_package_resources `expand_executable_paths "$@"`
+        map_recipes download_recipe_resources `expand_executable_paths "$@"`
     fi
 }
 
 
-# Begin main script.
+# Begin main.
 
 main() {
     # The main routine of the reqd program itself.
@@ -810,8 +809,8 @@ main() {
 
     # If REQD_DIR is already set in the environment, use that value.
     if [ -z "$REQD_DIR" ]; then
-        local script_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        REQD_DIR="$( dirname "$script_dir" )"
+        local main_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+        REQD_DIR="$( dirname "$main_dir" )"
     fi
 
     # Set configuration environment variables.
@@ -860,12 +859,12 @@ main() {
 
     check_for_program basename dirname wc touch
 
-    # Export reqd environment variables for use in package scripts.
+    # Export reqd environment variables for use in recipes.
     export REQD_PREFIX
     export REQD_BIN REQD_SBIN REQD_LIB REQD_ETC REQD_SRC REQD_OPT REQD_VAR
     export REQD_DIR REQD_VERBOSE REQD_INVOCATION
 
-    # Export utility functions for use in package scripts written in bash.
+    # Export utility functions for use in recipes written in bash.
     export -f reqd_echo reqd_error reqd_main
     export -f reqd_ls reqd_run_only_once reqd_run_once reqd_newer_than
 
