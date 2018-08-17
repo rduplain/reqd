@@ -623,13 +623,13 @@ expand_executable_paths() {
 echo_environment() {
     # Print static environment variables to stdout.
 
-    reqd_echo "REQD_PREFIX: $REQD_PREFIX"
-    reqd_echo "REQD_BIN:    $REQD_BIN"
-    reqd_echo "REQD_SBIN:   $REQD_SBIN"
-    reqd_echo "REQD_LIB:    $REQD_LIB"
-    reqd_echo "REQD_ETC:    $REQD_ETC"
-    reqd_echo "REQD_SRC:    $REQD_SRC"
-    reqd_echo "REQD_MIRROR: $REQD_MIRROR"
+    echo "REQD_PREFIX: $REQD_PREFIX"
+    echo "REQD_BIN:    $REQD_BIN"
+    echo "REQD_SBIN:   $REQD_SBIN"
+    echo "REQD_LIB:    $REQD_LIB"
+    echo "REQD_ETC:    $REQD_ETC"
+    echo "REQD_SRC:    $REQD_SRC"
+    echo "REQD_MIRROR: $REQD_MIRROR"
 }
 
 checksum() {
