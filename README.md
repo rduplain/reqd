@@ -112,15 +112,15 @@ reqd_run "$@"
 
 ### Usage
 
-Create a hidden .reqd directory within a project, and download `reqd`:
+Download `reqd` to a hidden .reqd directory within a project:
 
 ```bash
 cd path/to/project
-mkdir -p .reqd/bin/
-cd .reqd/bin
-curl -o reqd https://raw.githubusercontent.com/rduplain/reqd/master/bin/reqd
-cat reqd # Read and make sure it is okay to execute.
-chmod a+x reqd
+curl -sSL qwerty.sh |\
+  sh -s - \
+  --sha256=dca4495f40c1b5c23b1f6edf7405ee56d4c6ff224c972de002ec852b48dd2797 \
+  --output=.reqd/bin/reqd --chmod=a+x \
+  https://raw.githubusercontent.com/rduplain/reqd/v2.0/bin/reqd
 ```
 
 Repeat these instructions to update `reqd` to the latest version. It is okay to
