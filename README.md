@@ -106,7 +106,7 @@ install() {
     PREFIX=$REQD_PREFIX make install
 }
 
-reqd_run "$@"
+reqd_main "$@"
 ```
 
 
