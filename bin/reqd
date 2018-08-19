@@ -37,6 +37,7 @@ declare REQD_ETC    # path to reqd/etc/, conf for recipes (static)
 declare REQD_SRC    # path to reqd/src/, dest for recipe resources (static)
 declare REQD_OPT    # path to reqd/opt/, in some recipe installations (static)
 declare REQD_VAR    # path to reqd/var/, post-install runtime files (static)
+declare REQD_J      # recommended job count for `make -j`, # CPUs -1 (static)
 declare REQD_NAME   # name of recipe being called (dynamic)
 declare REQD_RES    # base path where recipe resources are downloaded (dynamic)
 
@@ -631,6 +632,7 @@ echo_environment() {
     echo "REQD_SRC:    $REQD_SRC"
     echo "REQD_OPT:    $REQD_OPT"
     echo "REQD_VAR:    $REQD_VAR"
+    echo "REQD_J:      $REQD_J"
     echo "REQD_MIRROR: $REQD_MIRROR"
 }
 
@@ -679,6 +681,39 @@ checksum() {
             return 2
             ;;
     esac
+}
+
+processor_count() {
+    # Print processor count to stdout, blank if unknown.
+    #
+    # Given platform specifics, this tries multiple methods.
+
+    local cpus=$( getconf _NPROCESSORS_ONLN 2> /dev/null )
+
+    if [ -n "$cpus" ]; then
+        echo "$cpus"
+    else
+        sysctl hw.ncpu 2> /dev/null | awk '{ print $2 }'
+    fi
+}
+
+set_reqd_j() {
+    # Set REQD_J.
+
+    local j
+    local cpus=$( processor_count )
+
+    if [ -n "$cpus" ]; then
+        let j=cpus-1
+    else
+        j=1
+    fi
+
+    if [ $j -lt 1 ]; then
+        j=1
+    fi
+
+    REQD_J=${REQD_J:-$j}
 }
 
 check_for_program() {
@@ -841,6 +876,9 @@ main() {
     # When reqd gets a full command-line parser, this could look for '-v'.
     REQD_VERBOSE=${REQD_VERBOSE:-""}
 
+    # Set job hint to allow recipes to call `make -j $REQD_J` if desired.
+    set_reqd_j
+
     # Initialize bash traps.
     reset_traps
 
@@ -864,6 +902,7 @@ main() {
     # Export reqd environment variables for use in recipes.
     export REQD_PREFIX
     export REQD_BIN REQD_SBIN REQD_LIB REQD_ETC REQD_SRC REQD_OPT REQD_VAR
+    export REQD_J
     export REQD_DIR REQD_VERBOSE REQD_INVOCATION
 
     # Export utility functions for use in recipes written in bash.
