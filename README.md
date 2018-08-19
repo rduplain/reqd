@@ -110,7 +110,7 @@ reqd_main "$@"
 ```
 
 
-### Usage
+### Installation
 
 Download `reqd` to a hidden .reqd directory within a project:
 
@@ -124,12 +124,35 @@ curl -sSL qwerty.sh |\
 ```
 
 Repeat these instructions to update `reqd` to the latest version. It is okay to
-check the `reqd` program into other project repositories, if appropriate.
+check the `reqd` program into other project repositories, for offline usage as
+needed.
 
-The goal of reqd is to provide a self-sufficient install process, by which a
-developer can check out a project and run a single command to bootstrap the
-application environment. Accordingly, the reqd executable is relative to the
-project and not a system-wide install.
+Alternatively, use a Makefile include:
+
+```Makefile
+include .Makefile.d/reqd.mk
+```
+
+Using this Makefile include allows declarations of dependencies in other
+Makefile recipes, where `reqd-NAME` invokes `reqd install NAME`. The following
+example will download and install redis before attempting to run it:
+
+```Makefile
+run-redis: reqd-redis
+	$(REQD_PREFIX)/bin/redis-server
+```
+
+Install [reqd.mk](https://github.com/rduplain/Makefile.d/blob/master/reqd.mk)
+by following the instructions
+[here](https://github.com/rduplain/Makefile.d#installation).
+
+
+### Usage
+
+The goal of reqd is to provide a self-sufficient install process for developer
+tools, by which a developer can check out a project and run a single command to
+bootstrap the application environment. Accordingly, the reqd executable is
+relative to the project and not a system-wide install.
 
 Next, add scripts to .reqd/sbin/ to install and configure dependencies.
 Recipes are invoked with conventional subcommands:
