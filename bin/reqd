@@ -629,6 +629,8 @@ echo_environment() {
     echo "REQD_LIB:    $REQD_LIB"
     echo "REQD_ETC:    $REQD_ETC"
     echo "REQD_SRC:    $REQD_SRC"
+    echo "REQD_OPT:    $REQD_OPT"
+    echo "REQD_VAR:    $REQD_VAR"
     echo "REQD_MIRROR: $REQD_MIRROR"
 }
 
