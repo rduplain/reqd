@@ -144,7 +144,7 @@ run-redis: reqd-redis
 
 Install [reqd.mk](https://github.com/rduplain/Makefile.d/blob/master/reqd.mk)
 by following the instructions
-[here](https://github.com/rduplain/Makefile.d#installation).
+[here](https://github.com/rduplain/Makefile.d#platform-support).
 
 
 ### Usage
