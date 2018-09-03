@@ -666,7 +666,7 @@ checksum() {
 
             local dgst_value=$( echo "$dgst_output" | cut -f 2 -d '=' )
             dgst_value=${dgst_value// /} # Remove all spaces from hash value.
-            if [ -z "dgst_value" ]; then
+            if [ -z "$dgst_value" ]; then
                 reqd_error "Unable to parse hash value from openssl dgst call."
                 return 1
             fi
