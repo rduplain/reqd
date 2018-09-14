@@ -644,16 +644,18 @@ checksum() {
         return 2
     fi
 
-    filepath="$1"
-    hash_algorithm="$2"
-    hash_value="$3"
+    local filepath="$1"
+    local hash_algorithm="$2"
+    local hash_value="$3"
     shift 3
 
     case "$hash_algorithm" in
         "md5" | "sha1" | "sha224" | "sha256" | "sha384" | "sha512")
+            local dgst_value
             dgst_value=$(openssl_dgst "$filepath" $hash_algorithm) || return $?
 
             # Print a legible standalone section of checksum values to stderr.
+            local pad
             case "$hash_algorithm" in
                 "md5")
                     pad='----'
@@ -703,15 +705,15 @@ openssl_dgst() {
         return 2
     fi
 
-    filepath="$1"
-    hash_algorithm="$2"
+    local filepath="$1"
+    local hash_algorithm="$2"
     shift 2
 
     check_for_program openssl
     check_for_program awk tr
 
-    dgst_output=$(openssl dgst -$hash_algorithm "$filepath")
-    dgst_exit=$?
+    local dgst_output=$(openssl dgst -$hash_algorithm "$filepath")
+    local dgst_exit=$?
 
     if [ $dgst_exit -ne 0 ]; then
         reqd_error "openssl dgst failed with non-zero status: $dgst_exit"
@@ -719,6 +721,7 @@ openssl_dgst() {
     fi
 
     # Parse checksum output and trim spaces.
+    local dgst_value
     dgst_value=$(echo "$dgst_output" | awk -F= '{ print $2 }')
     dgst_value=$(echo "$dgst_value" | tr -d '[:space:]')
 
@@ -733,7 +736,7 @@ openssl_dgst() {
 repleat() {
     # Echo repeat replacement character for the width of given value.
 
-    replacement="$1"
+    local replacement="$1"
     shift
 
     check_for_program tr
