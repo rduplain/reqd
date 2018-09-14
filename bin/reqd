@@ -665,28 +665,24 @@ checksum() {
                     pad='-'
                     ;;
             esac
-            stderr "--- $hash_algorithm $pad$(repleat '-' $dgst_value)"
-            stderr "expected:   $hash_value"
-            if [ "$hash_value" = "$dgst_value" ]; then
-                stderr "$(green downloaded): $dgst_value"
-            else
-                stderr "$(red downloaded): $dgst_value"
-            fi
-            stderr "------------$(repleat '-' $dgst_value)"
+            reqd_error "--- $hash_algorithm $pad$(repleat '-' $dgst_value)"
+            reqd_error "expected:   $hash_value"
+            reqd_error "downloaded: $dgst_value"
+            reqd_error "------------$(repleat '-' $dgst_value)"
 
             if [ "$hash_value" != "$dgst_value" ]; then
-                stderr "error: $hash_algorithm mismatch."
+                reqd_error "error: $hash_algorithm mismatch."
                 return 1
             fi
 
             # Success. Provide suggestion to upgrade on weaker algorithms.
             case "$hash_algorithm" in
                 "md5" | "sha1")
-                    stderr "$(yellow "Using $hash_algorithm. Next time use:")"
-                    stderr
-                    stderr "    --sha256=$(openssl_dgst "$filepath" sha256)"
-                    stderr
-                    stderr "... assuming no $hash_algorithm collision."
+                    reqd_error "Using $hash_algorithm. Next time use:"
+                    reqd_error
+                    reqd_error "    sha256 $(openssl_dgst "$filepath" sha256)"
+                    reqd_error
+                    reqd_error "... assuming no $hash_algorithm collision."
                 ;;
             esac
             ;;
@@ -703,7 +699,7 @@ openssl_dgst() {
     # Unlike `checksum`, this does not validate selection of given algorithm.
 
     if [ $# -ne 2 ]; then
-        stderr "usage: openssl_dgst FILENAME sha1|sha256|..."
+        reqd_error "usage: openssl_dgst FILENAME sha1|sha256|..."
         return 2
     fi
 
@@ -711,14 +707,14 @@ openssl_dgst() {
     hash_algorithm="$2"
     shift 2
 
-    given openssl
-    given awk tr
+    check_for_program openssl
+    check_for_program awk tr
 
     dgst_output=$(openssl dgst -$hash_algorithm "$filepath")
     dgst_exit=$?
 
     if [ $dgst_exit -ne 0 ]; then
-        stderr "openssl dgst failed with non-zero status: $dgst_exit"
+        reqd_error "openssl dgst failed with non-zero status: $dgst_exit"
         return $dsgt_exit
     fi
 
@@ -727,7 +723,7 @@ openssl_dgst() {
     dgst_value=$(echo "$dgst_value" | tr -d '[:space:]')
 
     if [ -z "$dgst_value" ]; then
-        stderr "Unable to parse hash value from openssl dgst call."
+        reqd_error "Unable to parse hash value from openssl dgst call."
         return 3
     fi
 
@@ -740,7 +736,7 @@ repleat() {
     replacement="$1"
     shift
 
-    given tr
+    check_for_program tr
     echo "$@" | tr '[:print:]' "$replacement"
 }
 
