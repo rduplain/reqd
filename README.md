@@ -118,9 +118,9 @@ Download `reqd` to a hidden .reqd directory within a project:
 cd path/to/project
 curl -sSL qwerty.sh |\
   sh -s - \
-  --sha256=c29886329fe7e45771f12d8bd13af48c218448635a045904c72493742e0ad8e8 \
+  --sha256=2c10078193685919b7f0e15ff98a78236dbc179fcd509f885ff700d953a48ba8 \
   --output=.reqd/bin/reqd --chmod=a+x \
-  https://raw.githubusercontent.com/rduplain/reqd/v2.1/bin/reqd
+  https://raw.githubusercontent.com/rduplain/reqd/v2.2/bin/reqd
 ```
 
 Repeat these instructions to update `reqd` to the latest version. It is okay to
