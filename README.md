@@ -126,7 +126,7 @@ Repeat these instructions to update `reqd` to the latest version. It is okay to
 check the `reqd` program into other project repositories, for offline usage as
 needed.
 
-Alternatively, use a Makefile include:
+Alternatively, use a [Makefile include][reqd.mk]:
 
 ```Makefile
 include .Makefile.d/reqd.mk
@@ -141,9 +141,11 @@ run-redis: reqd-redis
 	$(REQD_PREFIX)/bin/redis-server
 ```
 
-Install [reqd.mk](https://github.com/rduplain/Makefile.d/blob/master/reqd.mk)
-by following the instructions
-[here](https://github.com/rduplain/Makefile.d#platform-support).
+Install [reqd.mk][reqd.mk] by following the instructions [here][Makefile.d
+installation].
+
+[reqd.mk]: https://github.com/rduplain/Makefile.d/blob/master/reqd.mk
+[Makefile.d installation]: https://github.com/rduplain/Makefile.d#installation
 
 
 ### Usage
