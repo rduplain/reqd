@@ -103,7 +103,7 @@ resources() {
 install() {
     tar -xf $ARCHIVE
     cd $UNPACKED
-    PREFIX=$REQD_PREFIX make install
+    PREFIX=$REQD_PREFIX make -j $REQD_J install
 }
 
 reqd_main "$@"
