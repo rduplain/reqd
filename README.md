@@ -116,8 +116,7 @@ Download `reqd` to a hidden .reqd directory within a project:
 
 ```bash
 cd path/to/project
-curl -sSL qwerty.sh |\
-  sh -s - \
+curl --proto '=https' --tlsv1.2 -sSf https://qwerty.sh | sh -s - \
   --tag=v2.2 --chmod=a+x \
   https://github.com/rduplain/reqd.git bin/reqd:.reqd/bin/reqd
 ```
