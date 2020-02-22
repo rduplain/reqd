@@ -85,9 +85,9 @@ Download and install [Redis](https://redis.io/).
 ```bash
 #!/usr/bin/env bash
 
-UNPACKED=redis-4.0.11
+UNPACKED=redis-5.0.7
 ARCHIVE=$UNPACKED.tar.gz
-SHA256=fc53e73ae7586bcdacb4b63875d1ff04f68c5474c1ddeda78f00e5ae2eed1bbb
+SHA256=61db74eabf6801f057fd24b590232f2f337d422280fd19486eca03be87d3a82b
 
 check() {
     # Installs to this location, which local to the project.
