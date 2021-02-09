@@ -285,4 +285,4 @@ trace in bash to determine where it failed.
 
 ---
 
-Copyright (c) 2012-2020, R. DuPlain. BSD licensed.
+Copyright (c) 2012-2021, R. DuPlain. BSD licensed.
